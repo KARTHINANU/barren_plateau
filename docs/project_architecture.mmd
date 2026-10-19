@@ -1,0 +1,149 @@
+graph TB
+    %% =========================================================================
+    %% COMPLETE SYSTEM ARCHITECTURE & EXPERIMENTAL PIPELINE
+    %% Demonstrating and Mitigating Barren Plateaus in Random Circuits
+    %% =========================================================================
+
+    subgraph CoreEngine ["1. Quantum Circuit & Execution Engine"]
+        Ansatz["Hardware-Efficient Ansatz<br/>(Single-Qubit Rotations Rx-Ry-Rz + Linear CNOT Entanglement)"]
+        StatevectorEngine["Qiskit Statevector Simulator<br/>(Exact Numerical State Evolution)"]
+        ParamShift["Parameter-Shift Rule<br/>[C(θ + π/2) - C(θ - π/2)] / 2"]
+        Observable["Target Observable<br/>Local Pauli-Z on Qubit 0 (Z_0)"]
+        Ansatz --> StatevectorEngine
+        ParamShift --> StatevectorEngine
+        Observable --> StatevectorEngine
+    end
+
+    subgraph Stage1 ["Stage 1: Baseline Characterization (Sept 2026)"]
+        ScriptQubits["barren_plateau.py<br/>(Qubit Scaling n=2..10)"]
+        ScriptDepth["depth_experiment.py<br/>(Depth Scaling L=1..20)"]
+        ScriptExp["fit_exponential.py<br/>(Exponential Model Fit)"]
+        
+        CSV_Qubits["results_baseline_qubits.csv"]
+        CSV_Depth["results_baseline_depth.csv"]
+        Plot_Qubits["barren_plateau_qiskit.png"]
+        Plot_Depth["barren_plateau_depth.png"]
+        Plot_Exp["exponential_fit_qubits.png"]
+
+        ScriptQubits --> CSV_Qubits --> Plot_Qubits
+        ScriptDepth --> CSV_Depth --> Plot_Depth
+        CSV_Qubits --> ScriptExp --> Plot_Exp
+    end
+
+    subgraph Stage2 ["Stage 2: Initial Mitigation Strategies (Sept 2026)"]
+        ScriptCtrlInit["mitigation_controlled_init.py<br/>(Controlled Normal Init)"]
+        ScriptLayerwise["mitigation_layerwise.py<br/>(Initial Layerwise)"]
+        ScriptLayerwiseCorr["mitigation_layerwise_corrected.py<br/>(Sequential Layerwise Training)"]
+
+        CSV_CtrlInit["results_mitigation_controlled_init.csv"]
+        CSV_Layerwise["results_mitigation_layerwise.csv"]
+        CSV_LayerwiseCorr["results_mitigation_layerwise_corrected.csv"]
+        
+        Plot_CtrlInit["mitigation_controlled_init.png"]
+        Plot_Layerwise["mitigation_layerwise.png"]
+        Plot_LayerwiseCorr["mitigation_layerwise_corrected.png"]
+
+        ScriptCtrlInit --> CSV_CtrlInit --> Plot_CtrlInit
+        ScriptLayerwise --> CSV_Layerwise --> Plot_Layerwise
+        ScriptLayerwiseCorr --> CSV_LayerwiseCorr --> Plot_LayerwiseCorr
+    end
+
+    subgraph Stage3 ["Stage 3: Original Adaptive Trigger (Sept - Oct 2026)"]
+        ScriptAdaptMit["adaptive_mitigation.py<br/>(Fixed Combined & Heuristic)"]
+        ScriptAdaptTrig["adaptive_trigger.py<br/>(5% Spatial Variance Drop Rule)"]
+        ScriptAuditLegacy["audit_adaptive_statistics.py<br/>& validate_adaptive_statistics.py"]
+
+        CSV_AdaptMit["results_adaptive_mitigation.csv"]
+        CSV_AdaptTrig["results_adaptive_trigger.csv"]
+        CSV_ValTrials["validation_adaptive_trials.csv"]
+        CSV_ValSumm["validation_adaptive_summary.csv"]
+
+        Plot_AdaptMit["adaptive_mitigation.png"]
+        Plot_AdaptTrig["adaptive_trigger.png"]
+        Plot_ValDiag["validation_adaptive_diagnostics.png"]
+        Report_AuditLegacy["audit_adaptive_statistics_report.txt"]
+
+        ScriptAdaptMit --> CSV_AdaptMit --> Plot_AdaptMit
+        ScriptAdaptTrig --> CSV_AdaptTrig --> Plot_AdaptTrig
+        ScriptAuditLegacy --> CSV_ValTrials
+        ScriptAuditLegacy --> CSV_ValSumm --> Plot_ValDiag
+        ScriptAuditLegacy --> Report_AuditLegacy
+    end
+
+    subgraph Stage4 ["Stage 4: Extended Diagnostics & Bias Analysis (Oct 2026)"]
+        ScriptExpVal["expectation_value_diagnostics.py<br/>(Variance, MAG, MSG Metrics)"]
+        ScriptShotNoise["measurement_shot_noise_experiment.py<br/>(Finite-Shot vs Statevector)"]
+        ScriptGradComp["quantum_classical_gradient_comparison.py<br/>(Param-Shift vs Classical Backprop)"]
+        ScriptBias["bias_analysis_experiment.py<br/>(Init, Observable & Topology Bias)"]
+
+        CSV_ExpVal["results_expectation_diagnostics.csv"]
+        CSV_ShotNoise["results_measurement_shot_noise.csv"]
+        CSV_GradComp["results_quantum_classical_comparison.csv"]
+        CSV_Bias["results_bias_analysis.csv"]
+
+        Plot_ExpVal["expectation_diagnostics.png"]
+        Plot_ShotNoise["measurement_shot_noise.png"]
+        Plot_GradComp["quantum_classical_comparison.png"]
+        Plot_Bias["bias_analysis.png"]
+        Report_ShotNoise["measurement_shot_noise_report.txt"]
+        Report_Bias["bias_and_gradient_comparison_report.txt"]
+
+        ScriptExpVal --> CSV_ExpVal --> Plot_ExpVal
+        ScriptShotNoise --> CSV_ShotNoise --> Plot_ShotNoise
+        ScriptShotNoise --> Report_ShotNoise
+        ScriptGradComp --> CSV_GradComp --> Plot_GradComp
+        ScriptBias --> CSV_Bias --> Plot_Bias
+        ScriptBias --> Report_Bias
+    end
+
+    subgraph Stage5 ["Stage 5: Enhanced Multi-Metric Detector (Oct 2026)"]
+        ScriptEnhancedDet["enhanced_plateau_detector.py<br/>(MAG, Variance, Flatness Consensus)"]
+        CSV_EnhancedDet["results_enhanced_detection.csv"]
+        Plot_EnhancedDet["enhanced_detection_diagnostics.png"]
+        Report_EnhancedDet["enhanced_plateau_detection_report.txt"]
+
+        ScriptEnhancedDet --> CSV_EnhancedDet --> Plot_EnhancedDet
+        ScriptEnhancedDet --> Report_EnhancedDet
+    end
+
+    subgraph Stage6 ["Stage 6: Enhanced Adaptive Mitigation & Audit (Oct 2026)"]
+        ScriptAdaptEnh["adaptive_mitigation_enhanced.py<br/>(Consensus Detector Trigger)"]
+        CSV_AdaptEnh["results_adaptive_enhanced.csv"]
+        Plot_AdaptEnh["adaptive_mitigation_enhanced.png"]
+        Report_AdaptEnh["adaptive_mitigation_enhanced_report.txt"]
+        Audit_Phase6["phase6_verification_audit.txt"]
+
+        ScriptAdaptEnh --> CSV_AdaptEnh --> Plot_AdaptEnh
+        ScriptAdaptEnh --> Report_AdaptEnh
+        ScriptAdaptEnh -.-> Audit_Phase6
+    end
+
+    subgraph Stage7 ["Stage 7: Controlled Benchmark & Statistical Correction (Oct 2026)"]
+        ScriptPhase7["phase7_controlled_benchmark.py<br/>(Paired Streams, 6 Arms, Dual Metrics)"]
+        CSV_Phase7Raw["results_phase7_controlled_benchmark.csv<br/>(Original Dataset)"]
+        Plot_Phase7["phase7_controlled_benchmark.png<br/>(6-Panel Diagnostic Figure)"]
+        Report_Phase7Raw["phase7_controlled_benchmark_report.txt<br/>(Preliminary Normal CI)"]
+        
+        Audit_Phase7["phase7_independent_audit_report.txt<br/>(Independent Audit)"]
+        ScriptPhase7Corr["Phase 7 Statistical Correction Engine<br/>(Student-t df=9, ddof=1)"]
+        
+        CSV_Phase7Corr["results_phase7_controlled_benchmark_corrected.csv<br/>(Corrected Dataset)"]
+        Report_Phase7Corr["phase7_controlled_benchmark_report_corrected.txt<br/>(Corrected Report)"]
+        Verify_Phase7["phase7_final_verification.txt<br/>(Final Checklist)"]
+
+        ScriptPhase7 --> CSV_Phase7Raw --> Plot_Phase7
+        ScriptPhase7 --> Report_Phase7Raw
+        CSV_Phase7Raw --> Audit_Phase7
+        Audit_Phase7 --> ScriptPhase7Corr
+        ScriptPhase7Corr --> CSV_Phase7Corr
+        ScriptPhase7Corr --> Report_Phase7Corr
+        ScriptPhase7Corr --> Verify_Phase7
+    end
+
+    CoreEngine --> Stage1
+    CoreEngine --> Stage2
+    CoreEngine --> Stage3
+    CoreEngine --> Stage4
+    CoreEngine --> Stage5
+    CoreEngine --> Stage6
+    CoreEngine --> Stage7

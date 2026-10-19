@@ -1,0 +1,179 @@
+================================================================================
+SCIENTIFIC EXPERIMENT REPORT: PHASE 7 CONTROLLED CPU BENCHMARK SWEEPS (CORRECTED)
+================================================================================
+Project: Demonstrating and Mitigating Barren Plateaus in Random Circuits
+Module: Phase 7 (Controlled CPU Benchmark Sweeps)
+Script Source: phase7_controlled_benchmark.py
+Original Dataset: results_phase7_controlled_benchmark.csv (Unchanged)
+Corrected Dataset: results_phase7_controlled_benchmark_corrected.csv
+Scope: n in [4, 6] Qubits, Depths L in [2, 4, 8, 12], 6 Arms
+Trial Count: N = 10 trials per condition (Exploratory Pilot Benchmark)
+Total Evaluated Circuits: 480 trained circuits
+Total Benchmark Wall-Clock Time: 2716.86 seconds (45.3 minutes)
+Report Status: FULLY CORRECTED AND VERIFIED STATISTICAL RELEASE
+
+================================================================================
+1. STATISTICAL CORRECTIONS APPLIED
+================================================================================
+The independent audit identified that the preliminary Phase 7 report utilized
+standard normal critical values (z = 1.96) and population standard deviations
+(ddof = 0) to calculate 95% confidence intervals, which underestimated parameter
+uncertainty for a small sample size of N = 10 trials per condition.
+
+Exact Statistical Formulations Corrected:
+1. Sample Variance and Sample Standard Deviation:
+   The divisor was corrected from N = 10 (ddof = 0) to N - 1 = 9 (ddof = 1):
+     s = sqrt( 1 / (N - 1) * sum_{i=1}^N (x_i - bar{x})^2 ) = sigma_{pop} * sqrt(10 / 9)
+   This corrects the 5.41% downward bias in dispersion.
+
+2. Exact Standard Error of the Mean:
+     SE = s / sqrt(N) = s / sqrt(10)
+
+3. Exact Two-Sided Student's t Distribution Critical Value:
+   For df = N - 1 = 9 at alpha = 0.05 (95% two-sided confidence):
+     t_{0.975, 9} = 2.262157 (replacing the large-sample normal approximation z = 1.960000).
+   The Student-t multiplier is 15.42% wider than the normal z-multiplier.
+
+4. Corrected 95% Confidence Interval:
+     CI_{95%} = [ bar{x} - t_{0.975, 9} * SE,  bar{x} + t_{0.975, 9} * SE ]
+   Combined effect: The corrected confidence intervals are ~21.7% wider than the
+   preliminary report, properly reflecting the empirical uncertainty of N = 10 trials.
+
+================================================================================
+2. COMPREHENSIVE CORRECTED BENCHMARK RESULTS TABLE
+================================================================================
+All raw trial measurements (initial cost, final cost, gradient variance, trigger
+counts, circuit evaluations, runtime) remain 100% identical and unchanged.
+
+Columns:
+- Var(g_T0): Initial parameter gradient variance at trial start
+- C(T0) -> C(Tfin): Mean initial cost -> Mean final absolute cost (Target = -1.0)
+- Delta C: Mean cost reduction (bar{x} = C(T0) - C(Tfin); positive = reduction)
+- Prelim 95% CI: Preliminary normal-based confidence interval (z = 1.96, ddof = 0)
+- Corrected 95% CI: Exact Student's t confidence interval (t = 2.262, ddof = 1)
+- Trig%: Mitigation trigger rate across 10 trials
+- Evals: Mean circuit evaluations per trial
+
+Qubits | Depth | Method Name          | Var(g_T0)   | C(T0)  -> C(Tfin) | Delta C | Corrected Student-t 95% CI | Prelim Normal 95% CI   | Trig%  | Evals
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+n=4    | L=2   | Baseline_Uniform     | 1.3748e-01  | -0.06 -> -0.91     | +0.851  | [+0.528, +1.174]           | [+0.586, +1.116]       | 0.0  % | 246   
+n=4    | L=2   | Controlled_Init      | 6.6578e-03  | +0.99 -> +0.52     | +0.472  | [+0.302, +0.641]           | [+0.333, +0.611]       | 0.0  % | 246   
+n=4    | L=2   | Layerwise_Standard   | 1.3494e-01  | +0.05 -> -0.74     | +0.784  | [+0.637, +0.932]           | [+0.663, +0.906]       | 0.0  % | 246   
+n=4    | L=2   | Fixed_Combined       | 2.2866e-01  | +0.69 -> +0.57     | +0.113  | [+0.045, +0.180]           | [+0.057, +0.168]       | 0.0  % | 246   
+n=4    | L=2   | Adaptive_Legacy      | 1.3494e-01  | +0.05 -> -0.74     | +0.784  | [+0.637, +0.932]           | [+0.663, +0.906]       | 0.0  % | 294   
+n=4    | L=2   | Adaptive_Enhanced    | 1.3821e-01  | +0.05 -> -0.86     | +0.911  | [+0.605, +1.217]           | [+0.660, +1.163]       | 10.0 % | 296   
+n=4    | L=4   | Baseline_Uniform     | 3.2495e-02  | +0.14 -> -0.93     | +1.066  | [+0.903, +1.229]           | [+0.932, +1.200]       | 0.0  % | 486   
+n=4    | L=4   | Controlled_Init      | 7.8391e-03  | +0.97 -> +0.00     | +0.966  | [+0.838, +1.095]           | [+0.861, +1.072]       | 0.0  % | 486   
+n=4    | L=4   | Layerwise_Standard   | 4.5526e-02  | +0.12 -> -0.62     | +0.743  | [+0.384, +1.102]           | [+0.448, +1.038]       | 0.0  % | 486   
+n=4    | L=4   | Fixed_Combined       | 1.3209e-01  | +0.39 -> +0.32     | +0.074  | [+0.009, +0.139]           | [+0.020, +0.128]       | 0.0  % | 486   
+n=4    | L=4   | Adaptive_Legacy      | 5.5940e-02  | +0.04 -> -0.71     | +0.746  | [+0.389, +1.103]           | [+0.453, +1.039]       | 20.0 % | 582   
+n=4    | L=4   | Adaptive_Enhanced    | 4.5305e-02  | +0.01 -> -0.86     | +0.866  | [+0.456, +1.277]           | [+0.529, +1.204]       | 40.0 % | 588   
+n=4    | L=8   | Baseline_Uniform     | 1.4272e-02  | -0.18 -> -0.58     | +0.404  | [+0.191, +0.617]           | [+0.229, +0.579]       | 0.0  % | 966   
+n=4    | L=8   | Controlled_Init      | 1.5510e-02  | +0.93 -> -0.93     | +1.864  | [+1.833, +1.894]           | [+1.838, +1.889]       | 0.0  % | 966   
+n=4    | L=8   | Layerwise_Standard   | 2.6710e-02  | -0.02 -> -0.37     | +0.354  | [+0.120, +0.588]           | [+0.162, +0.547]       | 0.0  % | 966   
+n=4    | L=8   | Fixed_Combined       | 9.5134e-02  | -0.59 -> -0.63     | +0.044  | [+0.009, +0.079]           | [+0.015, +0.073]       | 0.0  % | 966   
+n=4    | L=8   | Adaptive_Legacy      | 2.8517e-02  | -0.30 -> -0.56     | +0.258  | [+0.033, +0.484]           | [+0.073, +0.444]       | 40.0 % | 1158  
+n=4    | L=8   | Adaptive_Enhanced    | 3.3065e-02  | -0.64 -> -0.77     | +0.131  | [-0.029, +0.291]           | [-0.000, +0.262]       | 80.0 % | 1172  
+n=4    | L=12  | Baseline_Uniform     | 3.0215e-02  | +0.07 -> -0.16     | +0.227  | [-0.029, +0.483]           | [+0.017, +0.437]       | 0.0  % | 1446  
+n=4    | L=12  | Controlled_Init      | 1.3202e-02  | +0.89 -> +0.33     | +0.567  | [+0.272, +0.863]           | [+0.324, +0.810]       | 0.0  % | 1446  
+n=4    | L=12  | Layerwise_Standard   | 3.3289e-02  | +0.02 -> -0.22     | +0.233  | [+0.097, +0.369]           | [+0.122, +0.344]       | 0.0  % | 1446  
+n=4    | L=12  | Fixed_Combined       | 3.4492e-02  | -0.89 -> -0.90     | +0.020  | [+0.011, +0.028]           | [+0.013, +0.026]       | 0.0  % | 1446  
+n=4    | L=12  | Adaptive_Legacy      | 1.4821e-02  | -0.40 -> -0.53     | +0.132  | [-0.004, +0.268]           | [+0.021, +0.244]       | 60.0 % | 1734  
+n=4    | L=12  | Adaptive_Enhanced    | 1.0303e-02  | -0.74 -> -0.81     | +0.077  | [-0.053, +0.206]           | [-0.030, +0.183]       | 90.0 % | 1756  
+n=6    | L=2   | Baseline_Uniform     | 1.3410e-01  | -0.04 -> -0.97     | +0.935  | [+0.622, +1.248]           | [+0.678, +1.192]       | 0.0  % | 366   
+n=6    | L=2   | Controlled_Init      | 7.0153e-03  | +0.99 -> +0.37     | +0.615  | [+0.409, +0.821]           | [+0.446, +0.784]       | 0.0  % | 366   
+n=6    | L=2   | Layerwise_Standard   | 1.7329e-01  | -0.01 -> -0.72     | +0.710  | [+0.532, +0.889]           | [+0.564, +0.857]       | 0.0  % | 366   
+n=6    | L=2   | Fixed_Combined       | 2.2715e-01  | +0.68 -> +0.51     | +0.172  | [+0.091, +0.253]           | [+0.105, +0.239]       | 0.0  % | 366   
+n=6    | L=2   | Adaptive_Legacy      | 1.7329e-01  | -0.01 -> -0.72     | +0.710  | [+0.532, +0.889]           | [+0.564, +0.857]       | 0.0  % | 438   
+n=6    | L=2   | Adaptive_Enhanced    | 1.5518e-01  | -0.01 -> -0.79     | +0.775  | [+0.562, +0.987]           | [+0.600, +0.949]       | 20.0 % | 440   
+n=6    | L=4   | Baseline_Uniform     | 4.1666e-02  | -0.01 -> -0.92     | +0.911  | [+0.703, +1.119]           | [+0.740, +1.082]       | 0.0  % | 726   
+n=6    | L=4   | Controlled_Init      | 6.4652e-03  | +0.96 -> +0.02     | +0.940  | [+0.777, +1.102]           | [+0.806, +1.073]       | 0.0  % | 726   
+n=6    | L=4   | Layerwise_Standard   | 3.7489e-02  | +0.13 -> -0.37     | +0.506  | [+0.219, +0.792]           | [+0.270, +0.741]       | 0.0  % | 726   
+n=6    | L=4   | Fixed_Combined       | 1.3620e-01  | +0.38 -> +0.34     | +0.041  | [+0.006, +0.076]           | [+0.012, +0.070]       | 0.0  % | 726   
+n=6    | L=4   | Adaptive_Legacy      | 4.4238e-02  | -0.08 -> -0.57     | +0.495  | [+0.198, +0.791]           | [+0.251, +0.738]       | 30.0 % | 870   
+n=6    | L=4   | Adaptive_Enhanced    | 5.3915e-02  | -0.32 -> -0.68     | +0.357  | [+0.024, +0.689]           | [+0.084, +0.630]       | 60.0 % | 876   
+n=6    | L=8   | Baseline_Uniform     | 1.3444e-02  | +0.01 -> -0.84     | +0.857  | [+0.766, +0.949]           | [+0.782, +0.932]       | 0.0  % | 1446  
+n=6    | L=8   | Controlled_Init      | 5.8341e-03  | +0.92 -> -0.37     | +1.290  | [+1.126, +1.455]           | [+1.155, +1.425]       | 0.0  % | 1446  
+n=6    | L=8   | Layerwise_Standard   | 5.1212e-03  | -0.07 -> -0.16     | +0.091  | [-0.003, +0.185]           | [+0.014, +0.168]       | 0.0  % | 1446  
+n=6    | L=8   | Fixed_Combined       | 7.5728e-02  | +0.20 -> +0.17     | +0.027  | [+0.009, +0.045]           | [+0.012, +0.042]       | 0.0  % | 1446  
+n=6    | L=8   | Adaptive_Legacy      | 1.3578e-02  | -0.47 -> -0.54     | +0.067  | [-0.030, +0.163]           | [-0.013, +0.146]       | 80.0 % | 1734  
+n=6    | L=8   | Adaptive_Enhanced    | 3.4005e-02  | -0.69 -> -0.71     | +0.012  | [+0.005, +0.019]           | [+0.007, +0.018]       | 100.0% | 1748  
+n=6    | L=12  | Baseline_Uniform     | 4.8218e-03  | +0.04 -> -0.79     | +0.826  | [+0.710, +0.942]           | [+0.731, +0.921]       | 0.0  % | 2166  
+n=6    | L=12  | Controlled_Init      | 8.3171e-03  | +0.90 -> -0.20     | +1.101  | [+0.728, +1.473]           | [+0.794, +1.407]       | 0.0  % | 2166  
+n=6    | L=12  | Layerwise_Standard   | 7.7893e-03  | +0.03 -> -0.02     | +0.048  | [+0.013, +0.084]           | [+0.019, +0.078]       | 0.0  % | 2166  
+n=6    | L=12  | Fixed_Combined       | 6.7497e-02  | -0.44 -> -0.47     | +0.030  | [+0.014, +0.046]           | [+0.017, +0.043]       | 0.0  % | 2166  
+n=6    | L=12  | Adaptive_Legacy      | 1.1613e-02  | -0.54 -> -0.60     | +0.064  | [-0.029, +0.157]           | [-0.012, +0.140]       | 100.0% | 2598  
+n=6    | L=12  | Adaptive_Enhanced    | 1.4976e-02  | -0.80 -> -0.87     | +0.065  | [-0.028, +0.159]           | [-0.011, +0.142]       | 100.0% | 2620  
+
+================================================================================
+3. SCIENTIFIC INTERPRETATION & METHODOLOGICAL DISTINCTIONS
+================================================================================
+3.1 Clarification of Cost Metrics: Initial vs Final vs Marginal vs Cumulative:
+A major methodological insight from this benchmark is the necessity of separating
+different optimization metrics:
+
+1. Initial Cost C(T0) Asymmetry:
+   - Haar-random uniform states yield C(T0) ~ 0.0 (maximum potential drop Delta C <= 1.0).
+   - Controlled near-zero initialization forces C(T0) ~ +0.95 (maximum potential drop Delta C <= 2.0).
+   - Therefore, reporting Delta C alone unfairly inflates Controlled Initialization.
+   - For example, at n=6, L=12, Controlled Init achieves Delta C = +1.101, but terminates
+     at a poor final energy of C(Tfin) = -0.204. Conversely, Baseline Uniform achieves
+     Delta C = +0.826 and reaches a far superior final energy of C(Tfin) = -0.785.
+
+2. Marginal vs Cumulative Layerwise Optimization:
+   - In Full-Circuit methods (Baseline, Controlled Init), C(T0) is the completely untrained circuit.
+   - In Layerwise methods (Layerwise Standard, Fixed Combined, Adaptive), C(T0) at depth L
+     is measured at the entrance of layer L, AFTER layers 1..L-1 have already been optimized!
+   - At n=6, L=12, Adaptive Enhanced enters layer 12 with C(T0) = -0.802 because prior
+     layers already optimized the quantum state close to the ground state (-1.0).
+   - Its marginal Delta C during layer 12 training is +0.065 (reaching C(Tfin) = -0.867).
+   - Comparing marginal Delta C (+0.065) directly to full-circuit Delta C (+0.826) without
+     recognizing this cumulative difference is an apples-to-oranges error. Both C(Tfin)
+     and Delta C must be analyzed together.
+
+3.2 Correction of Scientific Claims:
+1. Necessary Condition Claim:
+   - Original claim: "Elevating gradient variance is a NECESSARY condition for optimization convergence."
+   - Corrected scientific statement: Non-vanishing gradient variance across random initializations
+     is a necessary condition to prevent exponential gradient concentration (barren plateaus)
+     under standard first-order gradient descent. However, general optimization convergence
+     does not require global non-vanishing variance (e.g. adaptive preconditioned, second-order,
+     or gradient-free optimizers).
+   - Furthermore, the "Fixed Combined" paradox empirically demonstrates that high gradient variance
+     (Var(g) = 0.067 at n=6, L=12) is NOT sufficient for optimization progress (Delta C = +0.030).
+
+2. Mechanism Claim:
+   - Original claim: "Freezing prior layers confines optimization to an affine subspace..."
+   - Corrected scientific statement: While the affine subspace constraint is a plausible
+     theoretical hypothesis explaining why Fixed Combined fails, empirical numerical simulations
+     on 4- and 6-qubit toy models provide supportive empirical evidence rather than formal
+     mathematical proof of a universal physical mechanism.
+
+3. Scope and Superiority:
+   - These findings represent small-scale CPU simulations on 4- and 6-qubit circuits with
+     a 10-trial exploratory pilot budget per cell.
+   - No method evaluated universally solves barren plateaus. Adaptive mitigation achieves
+     superior selective convergence in this configuration, but scaling to large qubit counts
+     remains subject to asymptotic exponential bounds.
+
+================================================================================
+4. INCONCLUSIVE & OVERLAPPING CONDITIONS
+================================================================================
+Under the corrected Student-t confidence intervals:
+1. At n=4, L=12:
+   - Baseline Uniform:    Delta C = +0.227, 95% CI [-0.029, +0.483] (Spans zero)
+   - Adaptive Legacy:     Delta C = +0.132, 95% CI [-0.004, +0.268] (Spans zero)
+   - Adaptive Enhanced:   Delta C = +0.077, 95% CI [-0.053, +0.206] (Spans zero)
+2. At n=6, L=8:
+   - Layerwise Standard:  Delta C = +0.091, 95% CI [-0.003, +0.185] (Spans zero)
+   - Adaptive Legacy:     Delta C = +0.067, 95% CI [-0.030, +0.163] (Spans zero)
+3. At n=6, L=12:
+   - Adaptive Legacy:     Delta C = +0.064, 95% CI [-0.029, +0.157] (Spans zero)
+   - Adaptive Enhanced:   Delta C = +0.065, 95% CI [-0.028, +0.159] (Spans zero)
+
+Conclusion: For marginal cost reduction in deep layers (L=8, 12), the exploratory N=10
+trial budget yields confidence intervals spanning zero. We do NOT claim statistically
+significant marginal reduction at L=12 between adaptive methods based on Delta C alone.
+Rather, performance distinctions rest on cumulative final cost C(Tfin) and selective
+trigger activation.
+================================================================================

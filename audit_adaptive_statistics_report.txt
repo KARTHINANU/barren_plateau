@@ -1,0 +1,112 @@
+================================================================================
+AUDIT REPORT: ADAPTIVE TRIGGER EXPERIMENTAL STATISTICS
+Project: Demonstrating and Mitigating Barren Plateaus in Random Circuits
+================================================================================
+
+1. TRACE OF ADAPTIVE TRIGGER IMPLEMENTATION & DECISION STATISTIC
+--------------------------------------------------------------------------------
+In `adaptive_trigger.py` (lines 68-96):
+1. When layer l is added, all 18 parameter-shift gradients are computed for the new layer:
+     g_active = [∂C/∂θ_{l,0}, ∂C/∂θ_{l,1}, ..., ∂C/∂θ_{l,17}]
+2. The WITHIN-TRIAL active-layer sample variance is calculated:
+     v_curr = np.var(g_active) = (1/18) * sum_{j=0}^{17} (g_{l,j} - mean(g_active))^2
+3. At layer 1, this variance establishes that trial's individual reference:
+     v_ref = v_curr(layer=1)
+4. For layer l > 1, the trigger condition is evaluated:
+     IF v_curr < 0.05 * v_ref:
+         mitigation_active = True
+         reinitialize active layer ~ Normal(0, 0.1)
+         recalculate g_active with Normal initialization
+         v_curr = np.var(g_active)
+         permanently lock mitigation_active = True for remaining layers
+
+2. WHY THE TRIGGER STATISTIC AND REPORTED CSV VARIANCE ARE DIFFERENT
+--------------------------------------------------------------------------------
+A critical finding of this audit is that `results_adaptive_trigger.csv` presents
+two completely different statistical quantities side by side:
+
+  Statistic A: Within-Trial Intra-Layer Variance (Trigger Statistic)
+    - Evaluated across 18 DIFFERENT parameter gradients within a single trial k.
+    - Mean value at Layer 1 across 100 trials: v_ref_mean = 0.028605.
+    - Trigger Threshold: 0.05 * 0.028605 = 0.001430.
+
+  Statistic B: Cross-Trial Population Variance (Reported Current Variance)
+    - Evaluated for ONE SINGLE parameter (θ_0, Rx gate on qubit 0) across 100 trials.
+    - Reported in CSV as `current_variance` = 0.308193 at depth 1.
+
+EXPLANATION OF APPARENT PARADOX:
+In the CSV, `current_variance` (0.3082) is > 200x larger than `trigger_threshold` (0.00143).
+This is NOT an error. Across random trials with Uniform(0, 2pi) initialization, the first
+layer's gradient g_0 has a broad distribution spanning roughly [-0.8, +0.8], giving a cross-trial
+variance of ~0.308. However, within any single trial, the 18 gates produce expectation values
+centered close to each other, giving a within-trial variance of ~0.028.
+The trigger decision operates SOLELY on Statistic A, whereas the final comparison table
+evaluates Statistic B.
+
+3. CSV RECONSTRUCTION AUDIT: WHAT WAS SAVED VS WHAT WAS MISSING
+--------------------------------------------------------------------------------
+Inspection of `results_adaptive_trigger.csv` reveals:
+  [RECONSTRUCTIBLE]:
+    - Cross-trial population variance of θ_0 at depths 1, 2, 4, 8, 12, 16, 20.
+    - Mean reference variance across 100 trials (0.028605).
+    - Mean trigger threshold (0.001430).
+    - Cumulative activation rate at evaluated depths (0%, 5%, 11%, 25%, 42%, 54%, 62%).
+  [NOT RECONSTRUCTIBLE FROM ORIGINAL CSV]:
+    - Individual per-trial v_ref values for each of the 100 trials.
+    - Exact integer trigger depth for each trial (console logged mean = 9.98).
+    - Intra-layer variance trajectories v_curr(l) for each trial.
+    - Direct verification that every trigger firing was consistent with the 5% rule.
+
+-> VALIDATION RERUN VERDICT:
+Because per-trial diagnostic data cannot be recovered from aggregate CSV columns,
+a dedicated diagnostic script `validate_adaptive_statistics.py` was executed.
+
+4. PER-TRIAL VALIDATION DIAGNOSTICS & CONSISTENCY CHECK
+--------------------------------------------------------------------------------
+Diagnostic rerun executed with seed = 42, N = 7 depths logged.
+Total layer steps logged: 200
+Inconsistent trigger decisions found: 0
+[VERIFIED] 100% of trigger decisions were strictly consistent with the rule:
+          `v_curr < 0.05 * v_ref` triggered mitigation; `v_curr >= 0.05 * v_ref` did not.
+
+Validation Trials Triggered: 7 / 10 (70%)
+Trigger Depth Distribution (Validation): [10, 17, 10, 16, 3, 6, 11]
+Average Trigger Depth (Validation): 10.43
+
+VALIDATION DEPTH SUMMARY:
+Depth  | Mean v_ref   | Mean Thresh  | Mean v_curr  | Var(g0) [cross] | Active %
+---------------------------------------------------------------------------
+1      | 0.031641     | 0.001582     | 0.031641     | 0.344321        | 0.0     %
+2      | 0.031641     | 0.001582     | 0.018012     | 0.094631        | 0.0     %
+4      | 0.031641     | 0.001582     | 0.014931     | 0.132790        | 10.0    %
+8      | 0.031641     | 0.001582     | 0.011016     | 0.097466        | 20.0    %
+12     | 0.031641     | 0.001582     | 0.009892     | 0.121373        | 50.0    %
+16     | 0.031641     | 0.001582     | 0.008020     | 0.080014        | 60.0    %
+20     | 0.031641     | 0.001582     | 0.008072     | 0.129027        | 70.0    %
+---------------------------------------------------------------------------
+
+5. STATISTICAL UNCERTAINTY & SAMPLE SIZE LIMITATIONS
+--------------------------------------------------------------------------------
+Original Experiment (N = 100 trials):
+  - Final activation rate at Depth 20: p = 62/100 (62.0%).
+  - Standard Error of proportion: SE = sqrt(p * (1-p) / N) = sqrt(0.62 * 0.38 / 100) = 4.85%.
+  - 95% Confidence Interval (Normal approx): [52.5%, 71.5%].
+  - Interpretation: With 95% confidence, the true activation rate of this circuit under the
+    5% threshold lies between 52.5% and 71.5%.
+
+Sample Size Limitations:
+  - N = 100 is sufficient to observe the transition from 0% to ~62% activation.
+  - However, resolving fine differences in gradient variance requires large budgets due to
+    inherent circuit-to-circuit variance.
+  - In statevector simulation, sample variance has an estimator standard error of:
+      SE(Var) ≈ Var * sqrt(2 / (N - 1)) ≈ 0.142 * Var (approx 14% relative error for N=100).
+
+6. SCIENTIFIC GUARDRAILS
+--------------------------------------------------------------------------------
+1. Gradient variance preservation does NOT prove successful optimization:
+   - Maintaining Var(g) ~ 0.0535 at depth 20 indicates that cost-function flatness is avoided.
+   - It does NOT prove that gradient descent converges to the global minimum of any physical problem.
+2. The 5% threshold is an empirical heuristic:
+   - It was chosen based on the depth transition region where baseline gradients drop to 5%.
+   - It is not a universal mathematical constant derived from representation theory.
+================================================================================

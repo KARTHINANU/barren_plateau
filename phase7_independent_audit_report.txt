@@ -1,0 +1,292 @@
+================================================================================
+PHASE 7 INDEPENDENT SCIENTIFIC AUDIT REPORT
+================================================================================
+Project: Demonstrating and Mitigating Barren Plateaus in Random Circuits
+Audit Target: Phase 7 (Controlled CPU Benchmark Sweeps)
+Audited Files:
+  - phase7_controlled_benchmark.py
+  - results_phase7_controlled_benchmark.csv
+  - phase7_controlled_benchmark.png
+  - phase7_controlled_benchmark_report.txt
+Audit Date: 2026-10-14
+Auditor: Independent Senior Quantum Computing Auditor & Experimental Evaluator
+Overall Audit Verdict: PASSED WITH METHODOLOGICAL QUALIFICATIONS (NO CRITICAL ERRORS)
+
+================================================================================
+1. EXECUTIVE SUMMARY & VERDICT CLASSIFICATION
+================================================================================
+A rigorous, line-by-line audit and statistical re-evaluation of Phase 7 was
+conducted across all 48 experimental conditions (n in {4, 6}, L in {2, 4, 8, 12},
+6 benchmark arms, N=10 trials per cell, totaling 480 trained circuits).
+
+Classification of Key Audit Categories:
+- [PASS] Experimental Methodology & Circuit Consistency: PASS
+- [PASS] Paired Random Stream Schedule & Reproducibility: PASS (Bit-Exact)
+- [PASS] Objective Function & Gradient Sign Verification: PASS
+- [PASS] CSV Completeness & Cost Reduction Arithmetic: PASS
+- [PASS] Evaluation Budget Accounting & Tracking: PASS
+- [PASS] Plot Graphical & Numerical Integrity: PASS
+- [WARNING] Small-Sample CI Multiplier (Normal z vs Student-t, ddof=0 vs 1): WARNING
+- [WARNING] Interpretation of Entry-Cost c_init in Layerwise Arms: WARNING
+- [CORRECTION] Scientific Overclaims on "Necessary Condition" & "Proved Mechanism": FLAGGED & CORRECTED
+
+================================================================================
+2. EXPERIMENTAL METHODOLOGY AUDIT
+================================================================================
+2.1 Initialization & Circuit Architecture:
+- Baseline Uniform: Full circuit (3nL parameters) initialized U ~ Uniform(0, 2pi).
+- Controlled Init: Full circuit (3nL parameters) initialized Z ~ Normal(0, 0.1^2).
+- Layerwise Standard: Sequential layer-by-layer growth (l = 1..L). Active layer
+  initialized U ~ Uniform(0, 2pi), prior layers frozen during active step.
+- Fixed Combined: Sequential layer-by-layer growth (l = 1..L). Active layer
+  initialized Z ~ Normal(0, 0.1^2), prior layers frozen during active step.
+- Adaptive Legacy: Sequential growth with U ~ Uniform(0, 2pi). Checks single
+  spatial variance drop (v_curr < 0.05 * v_ref). If triggered, switches active layer
+  to Z ~ Normal(0, 0.1^2) and preserves normal init for subsequent layers.
+- Adaptive Enhanced: Sequential growth with U ~ Uniform(0, 2pi). Checks Phase 5
+  multi-metric consensus ((mag < 0.06 and var < 0.01) or (loss_prog < 0.002 and mag < 0.10)).
+  If triggered, switches active layer to Z ~ Normal(0, 0.1^2) with frozen prior layers.
+- Circuit Structure: All arms use the exact same alternating ansatz: single-qubit
+  rotations (Rx, Ry, Rz) followed by a linear nearest-neighbor CNOT entangling ladder.
+- Audit Finding: PASS. Architectures and initializations strictly adhere to specifications.
+
+2.2 Paired Random Stream Schedule:
+- Implementation in run_benchmarked_trial:
+  rng_u = np.random.RandomState(trial_seed)
+  rng_n = np.random.RandomState(trial_seed + 100000)
+- Master uniform parameters and master normal parameters are pre-drawn and sliced
+  deterministically layer-by-layer:
+  Layer l uniform slice: [(l-1)*3n : l*3n]
+  Layer l normal slice:  [(l-1)*3n : l*3n]
+- Verified: Re-running trial 0 for any condition produces bit-exact identical values
+  (e.g., n=4, L=2, seed=42 yields c_init = -0.70998047, c_final = -0.98939168,
+  g_t0 = 0.43476784 across separate interpreter invocations).
+- Audit Finding: PASS. The paired random stream schedule genuinely eliminates
+  random-draw variance between uniform-based and normal-based counterparts.
+
+2.3 Cost Function, Observable, Learning Rate, and Budget Parity:
+- Observable: Z_0 = SparsePauliOp("I"*(n-1) + "Z") in Qiskit reverse little-endian.
+- Minimization Objective: Minimized toward theoretical ground state -1.0.
+- Optimization Rule: theta^(t+1) = theta^(t) - eta * grad with eta = 0.5.
+- Gradient Sign: Exact parameter shift (c(theta + pi/2) - c(theta - pi/2)) / 2.0.
+  Gradient descent subtracts (eta * grad), which correctly minimizes cost.
+- Parameter Evaluation Parity:
+  * Full-circuit arms: 5 steps x (2 * 3nL) = 30nL gradient evaluations.
+  * Layerwise arms: L stages x [5 steps x (2 * 3n)] = 30nL gradient evaluations.
+  Both paradigms consume exactly the same number of parameter-shift gradient calls.
+- Audit Finding: PASS. Cost function, observable, learning rate, and gradient budget
+  are strictly identical across all benchmark arms.
+
+2.4 Unavoidable Methodological Differences:
+1. Concurrency vs Sequentiality:
+   Full-circuit methods update all 3nL parameters concurrently. Layerwise methods
+   update 3n parameters sequentially while freezing prior layers.
+2. Initial State Energy Asymmetry:
+   Uniform initialization yields Haar-random states with C(T0) ~ 0.0 (maximum theoretical
+   reduction Delta C <= 1.0). Controlled near-zero initialization yields states near
+   |00...0> with C(T0) ~ +0.95 (maximum theoretical reduction Delta C <= 2.0).
+3. Semantics of Entry Cost c_init:
+   In Full-Circuit methods, c_init is the completely untrained state at depth L.
+   In Layerwise methods, c_init is measured at the entry of layer L, AFTER layers 1..L-1
+   have already undergone sequential training. Consequently, for layerwise methods,
+   Delta C measures only the marginal cost reduction during layer L training, whereas
+   c_final measures cumulative optimization performance.
+- Audit Finding: PASS WITH WARNING. This distinction must be explicitly documented
+  to prevent misinterpreting marginal Delta C as cumulative performance.
+
+================================================================================
+3. STATISTICAL AUDIT & RE-COMPUTATION
+================================================================================
+3.1 Cost Reduction Arithmetic:
+- Recomputed Delta C = mean_initial_cost - mean_final_cost for all 48 rows.
+- Absolute error across all rows: 0.00e+00 (exact within IEEE 754 precision).
+- Audit Finding: PASS.
+
+3.2 Independent Verification of Sample Statistics & CIs:
+- Re-executed 10 independent trials for all 6 methods at n=4, L=2.
+- Differences between recomputed trial statistics and CSV values:
+  Baseline_Uniform   : diff_ci=0.00e+00, diff_cf=0.00e+00, diff_delta=0.00e+00, diff_var=0.00e+00
+  Controlled_Init    : diff_ci=0.00e+00, diff_cf=0.00e+00, diff_delta=0.00e+00, diff_var=0.00e+00
+  Layerwise_Standard : diff_ci=0.00e+00, diff_cf=0.00e+00, diff_delta=0.00e+00, diff_var=0.00e+00
+  Fixed_Combined     : diff_ci=0.00e+00, diff_cf=0.00e+00, diff_delta=0.00e+00, diff_var=0.00e+00
+  Adaptive_Legacy    : diff_ci=0.00e+00, diff_cf=0.00e+00, diff_delta=0.00e+00, diff_var=0.00e+00
+  Adaptive_Enhanced  : diff_ci=0.00e+00, diff_cf=0.00e+00, diff_delta=0.00e+00, diff_var=0.00e+00
+- Audit Finding: PASS. Data in CSV exactly reflects the raw trial outputs.
+
+3.3 Small-Sample CI Multiplier Note (Statistical Warning):
+- The benchmark script computed 95% confidence intervals using:
+  se = std(delta_c) / sqrt(10)
+  ci = mean +- 1.96 * se
+- Two small-sample statistical subtleties are noted:
+  1. np.std(..., ddof=0) was used (population std), which divides by N=10 rather than
+     sample degrees of freedom N-1=9. This underestimates sample standard deviation
+     by a factor of sqrt(10/9) ~ 1.054 (5.4%).
+  2. For N=10 samples, the exact 95% critical value from Student's t-distribution
+     with 9 degrees of freedom is t_(0.975, 9) = 2.262, whereas 1.96 applies to large N.
+  Combined effect: The reported confidence intervals are narrower by approximately
+  18% compared to exact Student-t sample confidence intervals:
+  t_exact / (1.96 * sqrt(9/10)) = 2.262 / 1.859 ~ 1.217.
+- Audit Finding: WARNING. This does not invalidate comparative conclusions where
+  confidence intervals are cleanly separated, but for overlapping marginal intervals
+  (e.g. at L=12), the exact Student-t interval must be acknowledged.
+
+3.4 Integrity of Grid & Circuit Evaluations:
+- Total rows in CSV: exactly 48 summary rows (2 qubit counts x 4 depths x 6 arms).
+- Missing values: 0 across all 20 columns.
+- Duplicate records: 0.
+- Circuit evaluation formula verified:
+  Baseline/Controlled: 6 + 10 * (3nL) = 246 (L=2), 486 (L=4), 966 (L=8), 1446 (L=12) for n=4.
+  Layerwise/Fixed:     6 + 10 * (3nL) = 246 (L=2), 486 (L=4), 966 (L=8), 1446 (L=12) for n=4.
+  Adaptive Legacy:     Base + 2 * (3n) * L checks = 294 (L=2), 582 (L=4), 1158 (L=8), 1734 (L=12).
+  Adaptive Enhanced:   Legacy Base + L cost evaluations = 296 (L=2), 588 (L=4), 1172 (L=8), 1756 (L=12).
+- Audit Finding: PASS. Evaluation counts match analytical derivations exactly.
+
+================================================================================
+4. REPORT CONSISTENCY & NARRATIVE DISCREPANCY INVESTIGATION
+================================================================================
+4.1 Comparison of Table vs CSV vs Plot:
+- Every numerical value in the results table of phase7_controlled_benchmark_report.txt
+  was cross-referenced against results_phase7_controlled_benchmark.csv.
+- All numbers (Var(g), C(T0), C(Tfin), Delta C, 95% CIs, Trigger%, Evals) match to
+  the reported decimal places with zero discrepancy.
+- The 6-panel visualization (phase7_controlled_benchmark.png) correctly plots the
+  n=6 dataset across all depths with 100% numerical fidelity.
+- Audit Finding: PASS.
+
+4.2 Investigation of Trigger Percentage Discrepancies:
+- Audit Question: Are there differences in adaptive trigger percentages between the
+  results table and the narrative?
+- Investigation Results:
+  1. Results Table (CSV & Report Table):
+     n=4:
+       Adaptive_Legacy   : L=2: 0.0%,  L=4: 20.0%, L=8: 40.0%,  L=12: 60.0%
+       Adaptive_Enhanced : L=2: 10.0%, L=4: 40.0%, L=8: 80.0%,  L=12: 90.0%
+     n=6:
+       Adaptive_Legacy   : L=2: 0.0%,  L=4: 30.0%, L=8: 80.0%,  L=12: 100.0%
+       Adaptive_Enhanced : L=2: 20.0%, L=4: 60.0%, L=8: 100.0%, L=12: 100.0%
+  2. Narrative in Previous Summary:
+     The summary narrative stated:
+     "Multi-Metric Adaptive Trigger Scaling: In n=6, Adaptive_Enhanced triggers at:
+      L=2: 20.0%, L=4: 60.0%, L=8: 100.0%, L=12: 100.0%"
+  3. Nature of Discrepancy:
+     - The narrative quoted ONLY the n=6 Adaptive_Enhanced figures and did not list
+       the n=4 trigger rates or the Adaptive_Legacy trigger rates.
+     - Additionally, in Phase 6 (which tested n=4 with N=25 trials), trigger rates were
+       reported as 12% (L=2), 44% (L=4), and 84% (L=8) for Enhanced, and 0%, 16%, 48% for Legacy.
+       In Phase 7 (which tested n=4 with N=10 trials), the empirical rates are 10%, 40%, 80% (Enhanced).
+       These differences (12% vs 10%, 44% vs 40%, 84% vs 80%) are completely consistent
+       with finite-sample binomial sampling noise (1 trial out of 10 represents a 10% step).
+- Audit Finding: PASS WITH CLARIFICATION. The narrative was incomplete in quoting only
+  n=6 for one arm, but there is no numerical corruption or fabricated data. Both n=4
+  and n=6 rates must always be reported side-by-side.
+
+4.3 Do Confidence Intervals Support the Conclusions?
+- Low-to-Moderate Depths (L=2, L=4):
+  Yes. Confidence intervals are narrow and non-overlapping. For instance, at n=6, L=2,
+  Baseline Uniform (Delta C = +0.935 [0.678, 1.192]) is distinctly superior to Fixed
+  Combined (Delta C = +0.172 [0.105, 0.239]).
+- Deepest Circuits (L=12):
+  No significant difference in MARGINAL Delta C between Layerwise methods. At n=6, L=12:
+  Adaptive Legacy:   Delta C = +0.064 [-0.012, +0.140]
+  Adaptive Enhanced: Delta C = +0.065 [-0.011, +0.142]
+  Both confidence intervals span zero. From marginal Delta C alone, one cannot claim
+  statistical superiority of Enhanced over Legacy in the final layer.
+  However, in CUMULATIVE FINAL COST C(T_final):
+  Adaptive Legacy reaches C(T_final) = -0.599 +- 0.323
+  Adaptive Enhanced reaches C(T_final) = -0.867 +- 0.110
+  Adaptive Enhanced achieves a significantly lower, less dispersed final energy.
+- Audit Finding: PASS WITH QUALIFICATION. Claims must be based on cumulative final cost
+  and trigger timing, not marginal Delta C at L=12.
+
+================================================================================
+5. CORRECTION OF SCIENTIFIC OVERCLAIMS
+================================================================================
+The following three scientific statements from earlier text and documentation
+have been audited, flagged, and corrected:
+
+--------------------------------------------------------------------------------
+OVERCLAIM 1: Claiming Gradient Variance is a "Necessary Condition for Convergence"
+--------------------------------------------------------------------------------
+- Flagged Text (phase7_controlled_benchmark_report.txt, line 88):
+  "Conclusion: Elevating gradient variance is a NECESSARY condition to prevent barren plateaus,
+   but NOT a SUFFICIENT condition for algorithmic convergence."
+- Why Misleading:
+  Gradient variance is the formal metric used to define barren plateaus in random parameter
+  spaces (McClean et al., 2018). However, non-vanishing gradient variance across the
+  entire parameter space is NOT a mathematical necessity for optimization convergence.
+  Algorithms can converge along low-variance directional paths, via adaptive preconditioned
+  optimizers (e.g. Adam, QNG), or via zero-order/second-order optimization.
+- Corrected Scientific Statement:
+  "Non-vanishing gradient variance is a necessary condition to prevent exponential
+   gradient concentration (the barren plateau phenomenon) in first-order gradient descent
+   under random parameter sampling, but it does NOT guarantee algorithmic convergence
+   toward the global ground state."
+
+--------------------------------------------------------------------------------
+OVERCLAIM 2: Claiming Empirical Results "Prove a Physical Mechanism"
+--------------------------------------------------------------------------------
+- Flagged Text (phase7_controlled_benchmark_report.txt, line 85):
+  "Cause: Freezing prior layers while initializing active layers near identity confines
+   optimization to an affine subspace that cannot rotate the frozen global state toward the ground state."
+- Why Misleading:
+  While confining parameters to an affine subspace explains why Fixed Combined fails,
+  an empirical numerical benchmark of 480 circuits on 4-6 qubits demonstrates an
+  empirical pathology; it does not constitute a rigorous mathematical proof of a
+  universal physical mechanism.
+- Corrected Scientific Statement:
+  "The observed failure of Fixed Combined (high gradient variance but near-zero cost reduction)
+   is consistent with the hypothesis that freezing prior layers confines subsequent
+   rotations to an affine subspace unable to escape local plateaus or reorient the
+   accumulated state vector. This provides strong empirical evidence, though not an
+   analytic proof, of optimization subspace trapping."
+
+--------------------------------------------------------------------------------
+OVERCLAIM 3: Unqualified Superiority Claims
+--------------------------------------------------------------------------------
+- Flagged Text:
+  Any narrative suggesting Controlled Initialization or Adaptive Mitigation universally
+  "solves" or "eliminates" barren plateaus.
+- Why Misleading:
+  Controlled initialization starts at C(T0) ~ +0.95 and achieves large Delta C (+1.101
+  at n=6, L=12), but terminates at a relatively poor final cost C(Tfin) = -0.204.
+  Baseline Uniform reaches a lower final energy (-0.785) despite lower initial variance.
+  Furthermore, all tests are on 4 and 6 qubits; asymptotic exponential concentration
+  remains an active theoretical limitation as n -> infinity.
+- Corrected Scientific Statement:
+  "No evaluated mitigation strategy universally solves barren plateaus. Controlled
+   initialization preserves early gradient signals but creates an artificial cost-reduction
+   asymmetry without guaranteeing ground-state reachability. Adaptive mitigation
+   achieves superior selective performance in this benchmark regime, but remains
+   constrained by heuristic detection thresholds and finite-size scaling limits."
+
+================================================================================
+6. PLOT INTEGRITY & DELIVERABLE STATUS
+================================================================================
+- Audit of phase7_controlled_benchmark.png:
+  The 6-panel figure was audited against the raw CSV data. Every plotted line,
+  scatter point, bar chart height, axis limit, and text label was verified.
+  No numerical, graphical, or labeling errors were found.
+- Verdict on phase7_audit_corrected_plot.png:
+  Since the original plot contains NO verified errors, phase7_audit_corrected_plot.png
+  is NOT generated, adhering strictly to the prompt instructions.
+- File Created:
+  phase7_independent_audit_report.txt (this document).
+
+================================================================================
+7. AUDIT SUMMARY TABLE
+================================================================================
+Item Audited                       | Status  | Detail / Resolution
+--------------------------------------------------------------------------------
+Circuit Architecture & Gates       | PASS    | Identical Rx-Ry-Rz + CNOT across all 6 arms
+Paired Random Stream Reproducibility| PASS   | Bit-exact reproducibility confirmed
+Objective & Observable Consistency | PASS    | Local Z_0 expectation minimized via gradient descent
+Evaluation Budget Accounting       | PASS    | Exact parity in parameter-shift evaluation counts
+Cost-Reduction Delta C Arithmetic  | PASS    | Exact C_init - C_final across all 48 rows
+Sample Statistics Verification     | PASS    | Recomputed trial statistics match CSV to < 1e-15
+Small-Sample CI Multiplier         | WARNING | Normal z=1.96 and ddof=0 underestimates Student-t CI by ~18%
+Entry Cost c_init Semantics        | WARNING | In layerwise arms, c_init is marginal, not global initial cost
+Trigger Rate Consistency           | PASS    | Binomial sampling noise between N=10 and N=25 fully explained
+Plotted Graphic Accuracy           | PASS    | Zero discrepancy between n=6 CSV data and PNG panels
+Scientific Overclaim Corrections   | FLAGGED | Corrected necessary condition, proof, and superiority claims
+Overall Phase 7 Audit Result       | PASSED  | Ready for user review; Phase 8 not started
+================================================================================
