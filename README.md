@@ -79,11 +79,7 @@ The gradient describes how the objective function changes with respect to an ind
 The parameter-shift rule is used to calculate the gradients:
 
 $$
-\frac{\partial C}{\partial \theta_i}
-=
-\frac{
-C(\theta_i+\pi/2)-C(\theta_i-\pi/2)
-}{2}
+\frac{\partial C}{\partial \theta_i} = \frac{C(\theta_i+\pi/2)-C(\theta_i-\pi/2)}{2}
 $$
 
 This allows the gradients to be evaluated using shifted circuit parameters.
@@ -91,10 +87,7 @@ This allows the gradients to be evaluated using shifted circuit parameters.
 Gradient variance is calculated over multiple independent random parameter initialisations:
 
 $$
-\mathrm{Var}(g)
-=
-\frac{1}{N}
-\sum_{i=1}^{N}(g_i-\bar{g})^2
+\mathrm{Var}(g) = \frac{1}{N}\sum_{i=1}^{N}(g_i-\bar{g})^2
 $$
 
 where:
@@ -356,7 +349,7 @@ These findings are specific to the investigated circuit configurations, observab
 Clone the repository:
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone <https://github.com/KARTHINANU/barren_plateau>
 cd Barren-Plateau-Project
 ```
 
