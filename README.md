@@ -6,7 +6,7 @@
 
 Barren plateaus are a potential trainability challenge in variational quantum algorithms (VQAs). They occur when gradients become increasingly concentrated around zero, making gradient-based optimisation difficult as the circuit or quantum system grows.
 
-This project investigates the gradient behaviour of parameterised quantum circuits and evaluates different approaches for improving their optimisation performance. Using Qiskit's statevector simulator, the study examines how gradient variance changes with qubit count and circuit depth, investigates the effect of finite-shot sampling, and compares several parameter initialisation, layer-wise optimisation, and gradient-assessment strategies.
+This project investigates the gradient behaviour of parameterised quantum circuits and evaluates different approaches for improving their optimisation performance. Using Qiskit's statevector simulator, the study examines how gradient variance changes with qubit count and circuit depth, investigates the effect of finite-shot sampling, and compares parameter initialisation, layer-wise optimisation, and gradient-assessment strategies.
 
 The investigation progresses from establishing an extended baseline to developing and evaluating mitigation methods through controlled experiments and a scaled benchmark.
 
@@ -24,7 +24,7 @@ The primary objectives of this project are:
 6. Investigate standard layer-wise optimisation and combined mitigation approaches.
 7. Develop and evaluate fixed and variance-relative gradient-assessment criteria.
 8. Compare Gradient Descent, Adam, and COBYLA as optimisation algorithms.
-9. Evaluate optimisation performance using initial objective values, final objective values, objective-function reduction, uncertainty, and computational requirements.
+9. Evaluate optimisation performance using initial objective values, final objective values, objective-function reduction, statistical uncertainty, and computational requirements.
 10. Conduct a scaled benchmark using matched random seeds and document the actual computational budgets.
 
 ## Quantum Circuit Architecture
@@ -33,43 +33,44 @@ The investigated circuits consist of parameterised single-qubit rotations and ne
 
 Each qubit is initialised in the computational basis state:
 
-\[
-|\psi_0\rangle=|0\rangle^{\otimes n}
-\]
+$$
+|\psi_0\rangle = |0\rangle^{\otimes n}
+$$
 
 The single-qubit rotation gates are:
 
-- \(R_x(\theta)\): rotation around the X axis.
-- \(R_y(\theta)\): rotation around the Y axis.
-- \(R_z(\theta)\): rotation around the Z axis.
+- **Rx(θ):** Rotation around the X axis.
+- **Ry(θ):** Rotation around the Y axis.
+- **Rz(θ):** Rotation around the Z axis.
 
 Nearest-neighbour CNOT gates are applied to introduce entanglement between adjacent qubits.
 
-The parameterised circuit is repeated across \(L\) layers. Each rotation gate has an associated trainable parameter.
+The parameterised circuit is repeated across $L$ layers. Each rotation gate has an associated trainable parameter.
 
 ### Objective Function
 
 The objective function is the expectation value of the Pauli-Z observable on the first qubit:
 
-\[
-C(\boldsymbol{\theta})=
-\langle\psi(\boldsymbol{\theta})|Z_0|
-\psi(\boldsymbol{\theta})\rangle
-\]
+$$
+C(\boldsymbol{\theta}) =
+\langle\psi(\boldsymbol{\theta})|
+Z_0
+|\psi(\boldsymbol{\theta})\rangle
+$$
 
 where:
 
-- \(\boldsymbol{\theta}\) represents the collection of circuit parameters.
-- \(|\psi(\boldsymbol{\theta})\rangle\) is the resulting quantum state.
-- \(Z_0\) is the Pauli-Z observable acting on the first qubit.
+- $\boldsymbol{\theta}$ represents the collection of circuit parameters.
+- $|\psi(\boldsymbol{\theta})\rangle$ is the resulting quantum state.
+- $Z_0$ is the Pauli-Z observable acting on the first qubit.
 
 The objective-function value lies within:
 
-\[
--1\leq C(\boldsymbol{\theta})\leq 1
-\]
+$$
+-1 \leq C(\boldsymbol{\theta}) \leq 1
+$$
 
-The optimisation task is to minimise this objective function towards the target value of \(-1\).
+The optimisation task is to minimise this objective function towards the target value of $-1$.
 
 ## Gradient Evaluation
 
@@ -77,25 +78,30 @@ The gradient describes how the objective function changes with respect to an ind
 
 The parameter-shift rule is used to calculate derivatives:
 
-\[
+$$
 \frac{\partial C}{\partial\theta_i}
 =
 \frac{
 C(\theta_i+\pi/2)-C(\theta_i-\pi/2)
 }{2}
-\]
+$$
 
 This allows the gradients to be evaluated using shifted circuit parameters.
 
 Gradient variance is calculated over multiple independent random parameter initialisations:
 
-\[
-\operatorname{Var}(g)=
+$$
+\operatorname{Var}(g)
+=
 \frac{1}{N}
-\sum_{i=1}^{N}(g_i-\bar g)^2
-\]
+\sum_{i=1}^{N}(g_i-\bar{g})^2
+$$
 
-where \(N\) is the number of trials and \(\bar g\) is the mean gradient.
+where:
+
+- $N$ is the number of independent trials.
+- $g_i$ is the gradient value from an individual trial.
+- $\bar{g}$ is the mean gradient.
 
 A reduction in gradient variance towards zero indicates increasing gradient concentration in the investigated circuit configuration.
 
@@ -107,9 +113,9 @@ The initial investigation was extended to examine gradient variance across a wid
 
 **Configuration:**
 
-- Qubit count: \(n=2\) to \(14\).
+- Qubit count: $n=2$ to $14$.
 - Independent random trials: 250 per qubit count.
-- Circuit depth: \(L=20\).
+- Circuit depth: $L=20$.
 - Total trials: 3,250.
 - Gradient variance calculated using the sampled gradient values.
 
@@ -133,16 +139,16 @@ The measured gradient variance decreased from approximately:
 
 An empirical exponential fit to the extended data was reported as:
 
-\[
+$$
 \operatorname{Var}(g)
 \approx 0.6486e^{-0.7489n}
-\]
+$$
 
-with:
+with a coefficient of determination of:
 
-\[
+$$
 R^2=0.9942
-\]
+$$
 
 The results provide empirical evidence of gradient concentration over the investigated finite range. The fitted relationship is not claimed to establish a universal asymptotic scaling law.
 
@@ -170,10 +176,10 @@ The investigated methods included:
 - Fixed layer-wise assessment.
 - Variance-relative assessment.
 
-The pilot used:
+**Configuration:**
 
-- Qubit counts: \(n=4,6\).
-- Circuit depths: \(L=2,4\).
+- Qubit counts: $n=4,6$.
+- Circuit depths: $L=2,4$.
 - Five random seeds.
 - Exploratory comparisons of objective-function reduction and assessment activation rates.
 
@@ -207,10 +213,10 @@ The layer-wise methods used the following total objective-evaluation budgets:
 
 | Circuit depth | Baseline | Layer-wise methods |
 |---:|---:|---:|
-| \(L=2\) | 50 | 50 |
-| \(L=4\) | 50 | 48 |
-| \(L=8\) | 50 | 80 |
-| \(L=12\) | 50 | 120 |
+| $L=2$ | 50 | 50 |
+| $L=4$ | 50 | 48 |
+| $L=8$ | 50 | 80 |
+| $L=12$ | 50 | 120 |
 
 The layer-wise budgets arise from the allocation of a minimum of 10 evaluations per layer, with the configured per-layer budget.
 
@@ -240,9 +246,9 @@ The project investigates multiple strategies rather than assuming that a single 
 
 Circuit parameters are independently initialised from a uniform distribution:
 
-\[
-\theta_i\sim U(0,2\pi)
-\]
+$$
+\theta_i \sim U(0,2\pi)
+$$
 
 This serves as the reference initialisation strategy.
 
@@ -250,9 +256,9 @@ This serves as the reference initialisation strategy.
 
 A normal distribution is used for parameter initialisation:
 
-\[
-\theta_i\sim\mathcal{N}(0,0.1^2)
-\]
+$$
+\theta_i \sim \mathcal{N}(0,0.1^2)
+$$
 
 This provides a near-identity initialisation strategy for comparison with uniform initialisation.
 
@@ -268,42 +274,50 @@ The fixed assessment method considers gradient magnitude, gradient variance, and
 
 The documented fixed criterion is:
 
-\[
-(\mathrm{MAG}<0.06\land V<0.01)
-\]
+$$
+(\mathrm{MAG}<0.06 \land V<0.01)
+$$
 
 or
 
-\[
+$$
 (\Delta C_{\mathrm{progress}}<0.002
 \land \mathrm{MAG}<0.10)
-\]
+$$
 
 where the quantities represent the gradient magnitude, gradient variance, and objective-function progress, respectively.
 
 ### 5. Variance-Relative Assessment
 
-The enhanced variance-relative method compares the gradient variance of the current layer with a reference variance:
+The enhanced variance-relative method compares the gradient variance of the current layer with a reference variance.
 
-\[
+The relative gradient variance is calculated as:
+
+$$
 \rho_V(l)=
 \frac{V_l}{V_{\mathrm{reference}}}
-\]
+$$
 
 The first assessment condition is:
 
-\[
+$$
 \rho_V(l)<0.10
-\]
+$$
 
 An additional condition considers objective-function stagnation:
 
-\[
-\Delta C_{\mathrm{progress}}
-<0.005|C_1|
+$$
+\Delta C_{\mathrm{progress}}<0.005|C_1|
 \quad\land\quad
 \rho_V(l)<0.25
-\]
+$$
+
+where:
+
+- $V_l$ represents the gradient variance of the current layer.
+- $V_{\mathrm{reference}}$ represents the reference gradient variance.
+- $C_1$ represents the initial objective-function value.
+- $\Delta C_{\mathrm{progress}}$ represents the objective-function progress.
 
 A numerical safeguard is used when the reference variance is extremely small to avoid unstable relative comparisons.
 
@@ -319,7 +333,7 @@ The principal findings from the reported experiments are:
 - Lower gradient variance does not automatically imply better objective-function optimisation.
 - A larger objective-function reduction must be interpreted alongside the initial and final objective-function values.
 - Assessment activation frequency alone does not establish mitigation effectiveness.
-- The Adaptive Enhanced method achieved a lower final objective-function value than the uniform baseline in the reported initial controlled benchmark condition at \(n=6,\ L=12\).
+- The Adaptive Enhanced method achieved a lower final objective-function value than the uniform baseline in the reported initial controlled benchmark condition at $n=6,\ L=12$.
 - The scaled benchmark revealed differences in activation frequency and computational evaluation requirements between the fixed and variance-relative layer-wise methods.
 - Layer-wise methods incurred different objective-evaluation budgets at different circuit depths.
 
@@ -335,6 +349,7 @@ These findings are specific to the investigated circuit configurations, observab
 - **Matplotlib** — graph generation and result visualisation.
 - **SciPy** — numerical fitting and statistical analysis.
 
+
 ## Installation
 
 Clone the repository:
@@ -344,13 +359,13 @@ git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd Barren-Plateau-Project
 ```
 
-Create and activate a Python virtual environment:
+Create a Python virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-On Windows PowerShell:
+On Windows PowerShell, activate it using:
 
 ```powershell
 .venv\Scripts\Activate.ps1
@@ -413,6 +428,8 @@ The extended baseline experiments provide empirical evidence of decreasing gradi
 The results indicate that gradient behaviour, optimisation performance, and computational expenditure must be evaluated together. In particular, preserving gradient variance or increasing assessment activation frequency does not necessarily lead to better optimisation outcomes.
 
 The study therefore emphasises careful experimental comparison, transparent computational budgets, statistical interpretation, and reproducibility when investigating trainability in variational quantum circuits.
+
+**Project Focus:** Quantum Circuit Trainability | Gradient Concentration | Parameter-Shift Differentiation | Layer-Wise Optimisation | Mitigation Assessment | Reproducible Simulation
 
 ## References
 
