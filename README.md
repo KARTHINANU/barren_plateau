@@ -76,10 +76,10 @@ The optimisation task is to minimise this objective function towards the target 
 
 The gradient describes how the objective function changes with respect to an individual circuit parameter.
 
-The parameter-shift rule is used to calculate derivatives:
+The parameter-shift rule is used to calculate the gradients:
 
 $$
-\frac{\partial C}{\partial\theta_i}
+\frac{\partial C}{\partial \theta_i}
 =
 \frac{
 C(\theta_i+\pi/2)-C(\theta_i-\pi/2)
@@ -91,7 +91,7 @@ This allows the gradients to be evaluated using shifted circuit parameters.
 Gradient variance is calculated over multiple independent random parameter initialisations:
 
 $$
-\operatorname{Var}(g)
+\mathrm{Var}(g)
 =
 \frac{1}{N}
 \sum_{i=1}^{N}(g_i-\bar{g})^2
@@ -140,11 +140,12 @@ The measured gradient variance decreased from approximately:
 An empirical exponential fit to the extended data was reported as:
 
 $$
-\operatorname{Var}(g)
-\approx 0.6486e^{-0.7489n}
+\mathrm{Var}(g)
+\approx
+0.6486e^{-0.7489n}
 $$
 
-with a coefficient of determination of:
+with a coefficient of determination:
 
 $$
 R^2=0.9942
